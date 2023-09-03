@@ -1,10 +1,11 @@
+import os
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, FileResponse
 import uvicorn
 
-PORT = 8080
+PORT = int(os.getenv('PORT', 8080))
 STATIC_FOLDER = Path("./course/webinars/webinar_7/static/")
 
 app = FastAPI()
@@ -31,4 +32,4 @@ def favicon():
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, port=PORT, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=PORT, log_level="info")

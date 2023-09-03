@@ -1,10 +1,12 @@
 
+import os
 from pathlib import Path
 import socket
 from http_app import read_request, parse_http_request
 
 
-PORT = 8080
+PORT = int(os.getenv('PORT', 8080))
+SERVER_ERROR_RESPONSE = (f'HTTP/1.1 500 Internal Server Error' + "\n\n" + 'Internal Server Error').encode()
 STATIC_FOLDER = Path("./course/webinars/webinar_7/static/")
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -15,6 +17,9 @@ def file_response(path, protocol):
 
 
 def handle_request(method, path, protocol):
+    if method == "OPTIONS":
+        return 'HITP/1.1 200 OK' + '\n' + 'Access-Control-Allow-Origin: *'
+    
     if method == "GET" and path == "/ping":
         response = f'{protocol} 200 OK' + "\n\n" + 'pong'
         return response.encode()
@@ -34,7 +39,7 @@ def handle_request(method, path, protocol):
 
 def run_server():
     try:
-        serversocket.bind((socket.gethostname(), PORT))
+        serversocket.bind(("0.0.0.0", PORT))
         serversocket.listen()
         print(f"Start listening at {PORT} port")
         while True:
@@ -42,8 +47,11 @@ def run_server():
             print(f"New connection: {client_address}")
             request = read_request(client_socket)
             print(request)
-            method, path, protocol, _ = parse_http_request(request)
-            response = handle_request(method, path, protocol)
+            try:
+                method, path, protocol, _ = parse_http_request(request)
+                response = handle_request(method, path, protocol)
+            except Exception:
+                response = SERVER_ERROR_RESPONSE
 
             client_socket.sendall(response)
             client_socket.close()
